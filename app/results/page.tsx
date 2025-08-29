@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import React, { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import {
@@ -21,40 +21,28 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import type { CVAnalysisResult } from "@/types/cv-analysis"
 
 export default function ResultsPage() {
-  const [overallScore] = useState(75)
+  const [result, setResult] = useState<CVAnalysisResult | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
-  // Mock data - in real app this would come from API
-  const analysisData = {
-    strengths: [
-      "Strong Java programming skills align perfectly with job requirements",
-      "5+ years of software development experience matches the senior level position",
-      "Experience with Spring Boot framework mentioned in both CV and JD",
-      "Agile methodology experience is a key requirement match",
-      "Bachelor's degree in Computer Science meets educational requirements",
-    ],
-    weaknesses: [
-      "Lacks AWS cloud experience which is listed as a preferred skill",
-      "No mention of Docker containerization experience",
-      "Missing React.js frontend experience mentioned in job description",
-      "No certification in relevant technologies",
-      "Limited leadership experience for senior role expectations",
-    ],
-    skillsBreakdown: {
-      technical: 85,
-      experience: 80,
-      education: 90,
-      soft_skills: 65,
-    },
-    suggestions: [
-      "Consider obtaining AWS certification to strengthen cloud computing credentials",
-      "Add any Docker or containerization experience you may have",
-      "Highlight any frontend development experience, even if minimal",
-      "Emphasize leadership or mentoring experiences in previous roles",
-      "Consider adding relevant online courses or certifications",
-    ],
-  }
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("cvAnalysisResult")
+      if (!raw) return
+      const parsed = JSON.parse(raw) as CVAnalysisResult
+      setResult(parsed)
+    } catch (e) {
+      setError("Failed to load analysis result")
+    }
+  }, [])
+
+  const overallScore = result?.overallScore ?? 0
+  const analysisData = useMemo(() => result?.analysis, [result])
+  const skillsEntries = useMemo(() => (
+    analysisData ? (Object.entries(analysisData.skillsBreakdown) as [string, number][]) : []
+  ), [analysisData])
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return "text-green-600"
@@ -197,12 +185,12 @@ export default function ResultsPage() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-400">
                       <CheckCircle className="size-5" />
-                      Key Strengths ({analysisData.strengths.length} matches)
+                      Key Strengths ({analysisData?.strengths?.length ?? 0} matches)
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <ul className="space-y-3">
-                      {analysisData.strengths.map((strength, i) => (
+                      {(analysisData?.strengths ?? []).map((strength, i) => (
                         <motion.li
                           key={i}
                           initial={{ opacity: 0, x: -20 }}
@@ -223,12 +211,12 @@ export default function ResultsPage() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-400">
                       <AlertTriangle className="size-5" />
-                      Areas to Improve ({analysisData.weaknesses.length} gaps)
+                      Areas to Improve ({analysisData?.weaknesses?.length ?? 0} gaps)
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <ul className="space-y-3">
-                      {analysisData.weaknesses.map((weakness, i) => (
+                      {(analysisData?.weaknesses ?? []).map((weakness, i) => (
                         <motion.li
                           key={i}
                           initial={{ opacity: 0, x: -20 }}
@@ -256,7 +244,7 @@ export default function ResultsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-8">
-                    {Object.entries(analysisData.skillsBreakdown).map(([category, score], index) => (
+                    {skillsEntries.map(([category, score], index) => (
                       <motion.div
                         key={category}
                         initial={{ opacity: 0, scale: 0.8 }}
@@ -337,30 +325,29 @@ export default function ResultsPage() {
                       <AccordionTrigger>Technical Skills Analysis</AccordionTrigger>
                       <AccordionContent>
                         <div className="space-y-4">
-                          <p className="text-sm text-muted-foreground">
-                            Your technical skills show strong alignment with core requirements. Java expertise and
-                            Spring Boot experience are excellent matches.
-                          </p>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <h4 className="font-medium text-green-700 dark:text-green-400 mb-2">Matched Skills</h4>
-                              <ul className="text-sm space-y-1">
-                                <li>• Java (Expert level)</li>
-                                <li>• Spring Boot</li>
-                                <li>• SQL Databases</li>
-                                <li>• Git Version Control</li>
-                              </ul>
+                          {analysisData?.detailedAnalysis?.technicalSkills ? (
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <h4 className="font-medium text-green-700 dark:text-green-400 mb-2">Matched Skills</h4>
+                                <ul className="text-sm space-y-1">
+                                  {(analysisData?.detailedAnalysis?.technicalSkills?.matched ?? []).map((s, i) => (
+                                    <li key={i}>• {s}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                              <div>
+                                <h4 className="font-medium text-orange-700 dark:text-orange-400 mb-2">Missing Skills</h4>
+                                <ul className="text-sm space-y-1">
+                                  {(analysisData?.detailedAnalysis?.technicalSkills?.missing ?? []).map((s, i) => (
+                                    <li key={i}>• {s}</li>
+                                  ))}
+                                </ul>
+                              </div>
                             </div>
-                            <div>
-                              <h4 className="font-medium text-orange-700 dark:text-orange-400 mb-2">Missing Skills</h4>
-                              <ul className="text-sm space-y-1">
-                                <li>• AWS Cloud Services</li>
-                                <li>• Docker Containers</li>
-                                <li>• React.js Frontend</li>
-                                <li>• Kubernetes</li>
-                              </ul>
-                            </div>
-                          </div>
+                          ) : (
+                            <p className="text-sm text-muted-foreground">No detailed technical skills available.</p>
+                          )}
+                          
                         </div>
                       </AccordionContent>
                     </AccordionItem>
@@ -368,8 +355,7 @@ export default function ResultsPage() {
                       <AccordionTrigger>Experience Analysis</AccordionTrigger>
                       <AccordionContent>
                         <p className="text-sm text-muted-foreground">
-                          Your 5+ years of software development experience aligns well with the senior position
-                          requirements. However, leadership experience could be better highlighted.
+                          {analysisData?.detailedAnalysis?.experienceNotes ?? "No experience notes available."}
                         </p>
                       </AccordionContent>
                     </AccordionItem>
@@ -377,8 +363,7 @@ export default function ResultsPage() {
                       <AccordionTrigger>Education & Certifications</AccordionTrigger>
                       <AccordionContent>
                         <p className="text-sm text-muted-foreground">
-                          Your Computer Science degree meets the educational requirements perfectly. Consider adding
-                          relevant certifications to strengthen your profile.
+                          {analysisData?.detailedAnalysis?.educationNotes ?? "No education notes available."}
                         </p>
                       </AccordionContent>
                     </AccordionItem>
@@ -397,7 +382,7 @@ export default function ResultsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {analysisData.suggestions.map((suggestion, i) => (
+                    {(analysisData?.suggestions ?? []).map((suggestion, i) => (
                       <motion.div
                         key={i}
                         initial={{ opacity: 0, y: 10 }}

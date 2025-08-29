@@ -93,18 +93,31 @@ export default function UploadPage() {
     setProcessingPhase(0)
 
     const phaseInterval = setInterval(() => {
-      setProcessingPhase((prev) => {
-        if (prev >= processingPhases.length - 1) {
-          clearInterval(phaseInterval)
-          // Navigate to results after all phases complete
-          setTimeout(() => {
-            router.push("/results")
-          }, 1000)
-          return prev
-        }
-        return prev + 1
-      })
-    }, 5000)
+      setProcessingPhase((prev) => (prev >= processingPhases.length - 1 ? prev : prev + 1))
+    }, 4000)
+
+    try {
+      const formData = new FormData()
+      formData.append("cv", cvFile)
+      formData.append("job", jdFile)
+
+      const resp = await fetch("/api/analyze", { method: "POST", body: formData })
+      const json = await resp.json()
+
+      if (!resp.ok) {
+        throw new Error(json?.error || "Failed to analyze documents")
+      }
+
+      sessionStorage.setItem("cvAnalysisResult", JSON.stringify(json))
+
+      clearInterval(phaseInterval)
+      router.push("/results")
+    } catch (err) {
+      clearInterval(phaseInterval)
+      setIsProcessing(false)
+      setProcessingPhase(0)
+      setError(err instanceof Error ? err.message : "Unexpected error occurred")
+    }
   }
 
   const FileUploadArea = ({

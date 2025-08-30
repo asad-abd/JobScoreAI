@@ -1,0 +1,2 @@
+# Replace with actual Woolf-provided token and put it in .env.local
+WOOLFAUTH=auth_token

@@ -10,6 +10,7 @@ import { Upload, FileText, AlertCircle, ArrowLeft, Brain, Search, Target, CheckC
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 
 export default function UploadPage() {
   const [cvFile, setCvFile] = useState<File | null>(null)
@@ -18,6 +19,7 @@ export default function UploadPage() {
   const [error, setError] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [processingPhase, setProcessingPhase] = useState(0)
+  const [modal, setModal] = useState<{ title: string; description: string } | null>(null)
   const router = useRouter()
 
   const processingPhases = [
@@ -105,7 +107,15 @@ export default function UploadPage() {
       const json = await resp.json()
 
       if (!resp.ok) {
-        throw new Error(json?.error || "Failed to analyze documents")
+        const msg = String(json?.error || "Failed to analyze documents")
+        if (/429|rate limit|too many/i.test(msg)) {
+          setModal({ title: "Hourly rate limit reached", description: "Please wait a few minutes and try again." })
+        } else if (/timeout|timed out|network/i.test(msg)) {
+          setModal({ title: "Request timed out", description: "The analysis took too long. Please retry shortly." })
+        } else {
+          setModal({ title: "Analysis failed", description: msg })
+        }
+        throw new Error(msg)
       }
 
       sessionStorage.setItem("cvAnalysisResult", JSON.stringify(json))
@@ -320,6 +330,19 @@ export default function UploadPage() {
       </header>
 
       <main className="container py-12 max-w-4xl">
+        {modal && (
+          <AlertDialog open onOpenChange={(o) => !o && setModal(null)}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{modal.title}</AlertDialogTitle>
+                <AlertDialogDescription>{modal.description}</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogAction onClick={() => setModal(null)}>OK</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

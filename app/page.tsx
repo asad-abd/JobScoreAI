@@ -378,7 +378,7 @@ export default function LandingPage() {
                   {
                     question: "Privacy & Security",
                     answer:
-                      "Your data is processed securely and not stored permanently. We use enterprise-grade encryption and follow strict data protection protocols.",
+                      "Your data is processed securely and not stored permanently.",
                   },
                   {
                     question: "AI Limitations",

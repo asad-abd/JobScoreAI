@@ -22,6 +22,14 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import type { CVAnalysisResult } from "@/types/cv-analysis"
+import { generateAnalysisPdf } from "@/lib/pdf/report"
+
+const SCORE_THRESHOLDS = {
+  EXCELLENT: 85,
+  GOOD: 70,
+  DECENT: 55,
+  POOR: 0
+} as const
 
 export default function ResultsPage() {
   const [result, setResult] = useState<CVAnalysisResult | null>(null)
@@ -44,15 +52,24 @@ export default function ResultsPage() {
     analysisData ? (Object.entries(analysisData.skillsBreakdown) as [string, number][]) : []
   ), [analysisData])
 
+  const getMatchLabel = (score: number): string => {
+    if (score >= SCORE_THRESHOLDS.EXCELLENT) return "Excellent Match"
+    if (score >= SCORE_THRESHOLDS.GOOD) return "Good Match"
+    if (score >= SCORE_THRESHOLDS.DECENT) return "Decent Match"
+    return "Poor Match"
+  }
+
   const getScoreColor = (score: number) => {
-    if (score >= 80) return "text-green-600"
-    if (score >= 60) return "text-yellow-600"
+    if (score >= SCORE_THRESHOLDS.EXCELLENT) return "text-green-600"
+    if (score >= SCORE_THRESHOLDS.GOOD) return "text-green-500"
+    if (score >= SCORE_THRESHOLDS.DECENT) return "text-yellow-600"
     return "text-red-600"
   }
 
   const getScoreBadgeVariant = (score: number) => {
-    if (score >= 80) return "default"
-    if (score >= 60) return "secondary"
+    if (score >= SCORE_THRESHOLDS.EXCELLENT) return "default"
+    if (score >= SCORE_THRESHOLDS.GOOD) return "default"
+    if (score >= SCORE_THRESHOLDS.DECENT) return "secondary"
     return "destructive"
   }
 
@@ -97,7 +114,7 @@ export default function ResultsPage() {
             <div className="flex items-center justify-center gap-4">
               <Badge variant={getScoreBadgeVariant(overallScore)} className="text-lg px-4 py-2 rounded-full">
                 <Award className="size-4 mr-2" />
-                {overallScore}% Match
+                {getMatchLabel(overallScore)}
               </Badge>
             </div>
           </div>
@@ -133,11 +150,13 @@ export default function ResultsPage() {
                       fill="transparent"
                       strokeLinecap="round"
                       className={
-                        overallScore >= 80 
+                        overallScore >= SCORE_THRESHOLDS.EXCELLENT 
                           ? "text-green-500" 
-                          : overallScore >= 60 
-                            ? "text-yellow-500"
-                            : "text-red-500"
+                          : overallScore >= SCORE_THRESHOLDS.GOOD
+                            ? "text-green-400"
+                            : overallScore >= SCORE_THRESHOLDS.DECENT 
+                              ? "text-yellow-500"
+                              : "text-red-500"
                       }
                       strokeDasharray={`${2 * Math.PI * 35}`}
                       initial={{ strokeDashoffset: 2 * Math.PI * 35 }}
@@ -159,11 +178,13 @@ export default function ResultsPage() {
                 </div>
                 
                 <p className="text-center text-muted-foreground max-w-md">
-                  {overallScore >= 80
+                  {overallScore >= SCORE_THRESHOLDS.EXCELLENT
                     ? "Excellent match! You're a strong candidate for this position."
-                    : overallScore >= 60
-                      ? "Good match with room for improvement in key areas."
-                      : "Some alignment, but significant gaps need to be addressed."}
+                    : overallScore >= SCORE_THRESHOLDS.GOOD
+                      ? "Good match! Minor improvements could strengthen your profile."
+                      : overallScore >= SCORE_THRESHOLDS.DECENT
+                        ? "Decent match with room for improvement in key areas."
+                        : "Some alignment, but significant gaps need to be addressed."}
                 </p>
               </div>
             </CardContent>
@@ -274,11 +295,13 @@ export default function ResultsPage() {
                               fill="transparent"
                               strokeLinecap="round"
                               className={
-                                score >= 80 
+                                score >= SCORE_THRESHOLDS.EXCELLENT 
                                   ? "text-green-500" 
-                                  : score >= 60 
-                                    ? "text-yellow-500"
-                                    : "text-red-500"
+                                  : score >= SCORE_THRESHOLDS.GOOD
+                                    ? "text-green-400"
+                                    : score >= SCORE_THRESHOLDS.DECENT 
+                                      ? "text-yellow-500"
+                                      : "text-red-500"
                               }
                               strokeDasharray={`${2 * Math.PI * 40}`}
                               initial={{ strokeDashoffset: 2 * Math.PI * 40 }}
@@ -301,7 +324,7 @@ export default function ResultsPage() {
                         <div>
                           <h3 className="font-semibold text-lg capitalize">{category.replace("_", " ")}</h3>
                           <p className="text-sm text-muted-foreground">
-                            {score >= 80 ? "Excellent" : score >= 60 ? "Good" : "Needs Work"}
+                            {score >= SCORE_THRESHOLDS.EXCELLENT ? "Excellent" : score >= SCORE_THRESHOLDS.GOOD ? "Good" : score >= SCORE_THRESHOLDS.DECENT ? "Decent" : "Needs Work"}
                           </p>
                         </div>
                       </motion.div>
@@ -402,7 +425,13 @@ export default function ResultsPage() {
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" variant="outline" className="rounded-full bg-white/90 text-blue-700 border-blue-200 hover:bg-white hover:text-blue-800 dark:bg-gray-100/90 dark:text-blue-700 dark:border-blue-300">
+            <Button
+              size="lg"
+              variant="outline"
+              className="rounded-full bg-white/90 text-blue-700 border-blue-200 hover:bg-white hover:text-blue-800 dark:bg-gray-100/90 dark:text-blue-700 dark:border-blue-300"
+              disabled={!result}
+              onClick={() => result && generateAnalysisPdf(result)}
+            >
               <Download className="size-4 mr-2" />
               Download Report
             </Button>

@@ -12,6 +12,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 
+import { trpc } from "@/lib/trpc/client"
+import { fileToTRPCFormat } from "@/lib/utils/file-converter"
+
 export default function UploadPage() {
   const [cvFile, setCvFile] = useState<File | null>(null)
   const [jdFile, setJdFile] = useState<File | null>(null)
@@ -21,6 +24,9 @@ export default function UploadPage() {
   const [processingPhase, setProcessingPhase] = useState(0)
   const [modal, setModal] = useState<{ title: string; description: string } | null>(null)
   const router = useRouter()
+
+  // tRPC mutation hook
+  const analyzeMutation = trpc.analysis.analyzeCv.useMutation()
 
   const processingPhases = [
     {
@@ -99,34 +105,39 @@ export default function UploadPage() {
     }, 4000)
 
     try {
-      const formData = new FormData()
-      formData.append("cv", cvFile)
-      formData.append("job", jdFile)
+      // Convert files to tRPC format
+      const [jobFile, cvFileConverted] = await Promise.all([
+        fileToTRPCFormat(jdFile),
+        fileToTRPCFormat(cvFile)
+      ])
 
-      const resp = await fetch("/api/analyze", { method: "POST", body: formData })
-      const json = await resp.json()
+      // Use tRPC for analysis
+      const result = await analyzeMutation.mutateAsync({
+        job: jobFile,
+        cv: cvFileConverted,
+      })
 
-      if (!resp.ok) {
-        const msg = String(json?.error || "Failed to analyze documents")
-        if (/429|rate limit|too many/i.test(msg)) {
-          setModal({ title: "Hourly rate limit reached", description: "Please wait a few minutes and try again." })
-        } else if (/timeout|timed out|network/i.test(msg)) {
-          setModal({ title: "Request timed out", description: "The analysis took too long. Please retry shortly." })
-        } else {
-          setModal({ title: "Analysis failed", description: msg })
-        }
-        throw new Error(msg)
-      }
-
-      sessionStorage.setItem("cvAnalysisResult", JSON.stringify(json))
-
+      // Handle success
+      sessionStorage.setItem("cvAnalysisResult", JSON.stringify(result))
       clearInterval(phaseInterval)
       router.push("/results")
     } catch (err) {
       clearInterval(phaseInterval)
       setIsProcessing(false)
       setProcessingPhase(0)
-      setError(err instanceof Error ? err.message : "Unexpected error occurred")
+      
+      const errorMessage = err instanceof Error ? err.message : "Unexpected error occurred"
+      
+      // Handle specific error types
+      if (/429|rate limit|too many/i.test(errorMessage)) {
+        setModal({ title: "Hourly rate limit reached", description: "Please wait a few minutes and try again." })
+      } else if (/timeout|timed out|network/i.test(errorMessage)) {
+        setModal({ title: "Request timed out", description: "The analysis took too long. Please retry shortly." })
+      } else {
+        setModal({ title: "Analysis failed", description: errorMessage })
+      }
+      
+      setError(errorMessage)
     }
   }
 
@@ -354,6 +365,7 @@ export default function UploadPage() {
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-pretty">
               Select your CV and job description PDFs to begin the AI-powered analysis
             </p>
+
           </div>
 
           {error && (

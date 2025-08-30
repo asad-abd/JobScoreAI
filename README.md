@@ -13,6 +13,16 @@ A Next.js application that analyzes CVs against job descriptions using AI to pro
   - Results: ![Results](public/results.png)
   - Download Report: ![Results](public/report.png)
 
+## API Architecture
+
+This application uses **tRPC** for type-safe API communication.
+
+### tRPC Endpoint
+- **Endpoint**: `/api/trpc/analysis.analyzeCv`
+- **Type-safe**: End-to-end TypeScript types from server to client
+- **Method**: Mutation with base64 file content
+- **Benefits**: Automatic type inference, better developer experience, and runtime type safety
+
 ## Quick Start
 
 ### Prerequisites
@@ -67,16 +77,18 @@ npm run test
 ```
 JobScoreAI/
 ├── app/                    # Next.js App Router
-│   ├── api/analyze/       # API endpoint
+│   ├── api/trpc/[trpc]/   # tRPC API handler
 │   ├── upload/            # File upload page
 │   └── results/           # Analysis results page
 ├── server/                # Backend architecture
+│   ├── trpc/              # tRPC setup and routers
 │   ├── controllers/       # Business logic orchestration
 │   ├── processors/        # Data transformation
 │   ├── accessors/         # External API calls
 │   ├── validators/        # Input validation schemas
 │   ├── agents/           # AI prompt management
 │   └── utils/            # Helper functions
+├── lib/trpc/             # tRPC client configuration
 ├── components/           # React UI components
 ├── types/               # TypeScript definitions
 └── tests/              # Test files
@@ -92,10 +104,13 @@ JobScoreAI/
 - **Agents**: AI prompt management and configuration
 
 ### API Endpoints
-- `POST /api/analyze` - Accepts job description and CV PDFs, returns analysis
+- `POST /api/trpc/analysis.analyzeCv` - tRPC procedure that accepts job description and CV files, returns analysis
 
-### Implementation Note (no tRPC)
-- The assessment mentions tRPC; this implementation uses Next.js App Router API routes instead (under `app/api/analyze/route.ts`) and a layered backend in the `server` folder (`controllers`, `processors`, `accessors`, `validators`, `agents`, `utils`). This keeps concerns separated and aligns with production-ready patterns.
+### Implementation Details
+- Uses tRPC for type-safe API communication as specified in the PRD
+- Maintains a layered backend architecture in the `server` folder (`controllers`, `processors`, `accessors`, `validators`, `agents`, `utils`) 
+- Files are converted to base64 format for transmission through tRPC
+- All type definitions are shared between client and server
 
 ### File Handling
 - PDFs are parsed in-memory in the API route; no files are written to disk.
@@ -117,12 +132,8 @@ JobScoreAI/
 
 ## 📋 API Usage
 
-### Analyze CV
-```bash
-curl -X POST http://localhost:3000/api/analyze \
-  -F "job=@job-description.pdf" \
-  -F "cv=@resume.pdf"
-```
+### Analyze CV via tRPC
+The analysis is performed through the tRPC endpoint with type-safe procedures. Use the web interface at `/upload` to analyze CVs, or integrate with the tRPC client programmatically.
 
 ### Response Format
 ```json
@@ -179,6 +190,3 @@ If you encounter issues after `npm install`, run:
 npm run postinstall  # This applies the pdf-parse patch automatically
 ```
 
-## Agents / AI (placeholder)
-
-This section will be expanded with details on multi-agent orchestration, prompt strategies, and schema validation improvements in a future update.

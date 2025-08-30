@@ -25,9 +25,11 @@ import type { CVAnalysisResult } from "@/types/cv-analysis"
 import { generateAnalysisPdf } from "@/lib/pdf/report"
 
 const SCORE_THRESHOLDS = {
-  EXCELLENT: 85,
+  EXCEPTIONAL: 90,
+  STRONG: 80,
   GOOD: 70,
-  DECENT: 55,
+  MODERATE: 60,
+  WEAK: 50,
   POOR: 0
 } as const
 
@@ -53,23 +55,29 @@ export default function ResultsPage() {
   ), [analysisData])
 
   const getMatchLabel = (score: number): string => {
-    if (score >= SCORE_THRESHOLDS.EXCELLENT) return "Excellent Match"
+    if (score >= SCORE_THRESHOLDS.EXCEPTIONAL) return "Exceptional Match"
+    if (score >= SCORE_THRESHOLDS.STRONG) return "Strong Match"
     if (score >= SCORE_THRESHOLDS.GOOD) return "Good Match"
-    if (score >= SCORE_THRESHOLDS.DECENT) return "Decent Match"
+    if (score >= SCORE_THRESHOLDS.MODERATE) return "Moderate Match"
+    if (score >= SCORE_THRESHOLDS.WEAK) return "Weak Match"
     return "Poor Match"
   }
 
   const getScoreColor = (score: number) => {
-    if (score >= SCORE_THRESHOLDS.EXCELLENT) return "text-green-600"
-    if (score >= SCORE_THRESHOLDS.GOOD) return "text-green-500"
-    if (score >= SCORE_THRESHOLDS.DECENT) return "text-yellow-600"
+    if (score >= SCORE_THRESHOLDS.EXCEPTIONAL) return "text-green-600"
+    if (score >= SCORE_THRESHOLDS.STRONG) return "text-green-500"
+    if (score >= SCORE_THRESHOLDS.GOOD) return "text-green-400"
+    if (score >= SCORE_THRESHOLDS.MODERATE) return "text-yellow-600"
+    if (score >= SCORE_THRESHOLDS.WEAK) return "text-orange-600"
     return "text-red-600"
   }
 
   const getScoreBadgeVariant = (score: number) => {
-    if (score >= SCORE_THRESHOLDS.EXCELLENT) return "default"
-    if (score >= SCORE_THRESHOLDS.GOOD) return "default"
-    if (score >= SCORE_THRESHOLDS.DECENT) return "secondary"
+    if (score >= SCORE_THRESHOLDS.EXCEPTIONAL) return "default"
+    if (score >= SCORE_THRESHOLDS.STRONG) return "default"
+    if (score >= SCORE_THRESHOLDS.GOOD) return "secondary"
+    if (score >= SCORE_THRESHOLDS.MODERATE) return "secondary"
+    if (score >= SCORE_THRESHOLDS.WEAK) return "outline"
     return "destructive"
   }
 
@@ -150,13 +158,17 @@ export default function ResultsPage() {
                       fill="transparent"
                       strokeLinecap="round"
                       className={
-                        overallScore >= SCORE_THRESHOLDS.EXCELLENT 
+                        overallScore >= SCORE_THRESHOLDS.EXCEPTIONAL 
                           ? "text-green-500" 
-                          : overallScore >= SCORE_THRESHOLDS.GOOD
+                          : overallScore >= SCORE_THRESHOLDS.STRONG
                             ? "text-green-400"
-                            : overallScore >= SCORE_THRESHOLDS.DECENT 
-                              ? "text-yellow-500"
-                              : "text-red-500"
+                            : overallScore >= SCORE_THRESHOLDS.GOOD
+                              ? "text-green-300"
+                              : overallScore >= SCORE_THRESHOLDS.MODERATE 
+                                ? "text-yellow-500"
+                                : overallScore >= SCORE_THRESHOLDS.WEAK
+                                  ? "text-orange-500"
+                                  : "text-red-500"
                       }
                       strokeDasharray={`${2 * Math.PI * 35}`}
                       initial={{ strokeDashoffset: 2 * Math.PI * 35 }}
@@ -178,13 +190,17 @@ export default function ResultsPage() {
                 </div>
                 
                 <p className="text-center text-muted-foreground max-w-md">
-                  {overallScore >= SCORE_THRESHOLDS.EXCELLENT
-                    ? "Excellent match! You're a strong candidate for this position."
-                    : overallScore >= SCORE_THRESHOLDS.GOOD
-                      ? "Good match! Minor improvements could strengthen your profile."
-                      : overallScore >= SCORE_THRESHOLDS.DECENT
-                        ? "Decent match with room for improvement in key areas."
-                        : "Some alignment, but significant gaps need to be addressed."}
+                  {overallScore >= SCORE_THRESHOLDS.EXCEPTIONAL
+                    ? "Exceptional match! You exceed the requirements for this position."
+                    : overallScore >= SCORE_THRESHOLDS.STRONG
+                      ? "Strong match! You meet most requirements very well."
+                      : overallScore >= SCORE_THRESHOLDS.GOOD
+                        ? "Good match! Some gaps but you're suitable for this role."
+                        : overallScore >= SCORE_THRESHOLDS.MODERATE
+                          ? "Moderate match with several important gaps to address."
+                          : overallScore >= SCORE_THRESHOLDS.WEAK
+                            ? "Weak match with significant gaps in key areas."
+                            : "Poor match with major misalignment to the role requirements."}
                 </p>
               </div>
             </CardContent>
@@ -295,13 +311,17 @@ export default function ResultsPage() {
                               fill="transparent"
                               strokeLinecap="round"
                               className={
-                                score >= SCORE_THRESHOLDS.EXCELLENT 
+                                score >= SCORE_THRESHOLDS.EXCEPTIONAL 
                                   ? "text-green-500" 
-                                  : score >= SCORE_THRESHOLDS.GOOD
+                                  : score >= SCORE_THRESHOLDS.STRONG
                                     ? "text-green-400"
-                                    : score >= SCORE_THRESHOLDS.DECENT 
-                                      ? "text-yellow-500"
-                                      : "text-red-500"
+                                    : score >= SCORE_THRESHOLDS.GOOD
+                                      ? "text-green-300"
+                                      : score >= SCORE_THRESHOLDS.MODERATE 
+                                        ? "text-yellow-500"
+                                        : score >= SCORE_THRESHOLDS.WEAK
+                                          ? "text-orange-500"
+                                          : "text-red-500"
                               }
                               strokeDasharray={`${2 * Math.PI * 40}`}
                               initial={{ strokeDashoffset: 2 * Math.PI * 40 }}
@@ -324,7 +344,7 @@ export default function ResultsPage() {
                         <div>
                           <h3 className="font-semibold text-lg capitalize">{category.replace("_", " ")}</h3>
                           <p className="text-sm text-muted-foreground">
-                            {score >= SCORE_THRESHOLDS.EXCELLENT ? "Excellent" : score >= SCORE_THRESHOLDS.GOOD ? "Good" : score >= SCORE_THRESHOLDS.DECENT ? "Decent" : "Needs Work"}
+                            {score >= SCORE_THRESHOLDS.EXCEPTIONAL ? "Exceptional" : score >= SCORE_THRESHOLDS.STRONG ? "Strong" : score >= SCORE_THRESHOLDS.GOOD ? "Good" : score >= SCORE_THRESHOLDS.MODERATE ? "Moderate" : score >= SCORE_THRESHOLDS.WEAK ? "Weak" : "Poor"}
                           </p>
                         </div>
                       </motion.div>

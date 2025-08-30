@@ -14,7 +14,7 @@ export const analyzeCvAgainstJob = async (jdText: string, cvText: string): Promi
   }
 
   const requestBody = buildAnalysisRequest(jdText, cvText)
-  console.log("requestBody", requestBody)
+
   const response = await callGeminiApi(requestBody)
   console.log(response)
   return analyzeCvText(response)

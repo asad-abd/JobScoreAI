@@ -13,6 +13,37 @@ A Next.js application that analyzes CVs against job descriptions using AI to pro
   - Results: ![Results](public/results.png)
   - Download Report: ![Results](public/report.png)
 
+## 🚀 Running the Application
+
+### Normal Way (Local Development)
+```bash
+# Install dependencies
+npm install
+
+# Set up environment variables (copy .example-env.local to .env.local)
+# Edit .env.local with your WOOLFAUTH token
+
+# Start development server
+npm run dev
+
+# Visit http://localhost:3000
+```
+
+### Containerized Way (Docker daemon should be running)
+```bash
+# Build and run in production mode
+make prod
+
+# Or for development with hot-reload
+make dev
+
+# Stop containers
+make stop
+
+# View logs
+make logs
+```
+
 ## API Architecture
 
 This application uses **tRPC** for type-safe API communication.
@@ -26,11 +57,12 @@ This application uses **tRPC** for type-safe API communication.
 ## Quick Start
 
 ### Prerequisites
-- Node.js 18+ 
-- npm or pnpm
+- Node.js 18+ and npm (for local development)
+- Docker and Docker Compose (for containerized deployment)
 
 ### Setup
 
+#### Option 1: Local Development
 1. **Clone and install dependencies:**
 ```bash
 git clone <repository-url>
@@ -41,7 +73,8 @@ npm install
 2. **Environment Configuration:**
 ```bash
 # IMPORTANT: You MUST set up your Gemini auth token
-# Edit .env.local (already created) and replace the placeholder:
+# Copy .example-env.local to .env.local and edit:
+cp .example-env.local .env.local
 nano .env.local
 # or
 code .env.local
@@ -53,6 +86,29 @@ WOOLFAUTH=gemini_auth_token_from_woolf_email
 3. **Start development server:**
 ```bash
 npm run dev
+```
+
+#### Option 2: Docker Deployment
+1. **Clone repository:**
+```bash
+git clone <repository-url>
+cd JobScoreAI
+```
+
+2. **Environment Configuration:**
+```bash
+# Copy and edit environment file:
+cp .example-env.local .env.local
+# Edit .env.local with your WOOLFAUTH token
+```
+
+3. **Run with Docker:**
+```bash
+# Production mode
+make prod
+
+# Development mode (with hot-reload)
+make dev
 ```
 
 4. **Open application:**
@@ -108,12 +164,35 @@ JobScoreAI/
 
 ### Implementation Details
 - Uses tRPC for type-safe API communication as specified in the PRD
-- Maintains a layered backend architecture in the `server` folder (`controllers`, `processors`, `accessors`, `validators`, `agents`, `utils`) 
+- Maintains a layered backend architecture in the `server` folder (`controllers`, `processors`, `accessors`, `validators`, `agents`, `utils`)
 - Files are converted to base64 format for transmission through tRPC
 - All type definitions are shared between client and server
 
 ### File Handling
 - PDFs are parsed in-memory in the API route; no files are written to disk.
+
+## 🐳 Docker Configuration
+
+### Container Setup
+The application is fully containerized with multi-stage Docker builds for optimal image sizes and development experience.
+
+### Makefile Commands
+- `make build` - Build production Docker image
+- `make prod` - Build and run production container
+- `make dev` - Build and run development container with hot-reload
+- `make run-prod` - Run existing production image
+- `make run-dev` - Run existing development image
+- `make stop` - Stop all containers
+- `make logs` - View container logs
+- `make sh` - Open shell in running container
+
+### Environment Variables
+Environment variables are loaded from `.env.local` file using Docker's `--env-file` flag. Required variables:
+- `WOOLFAUTH` - Gemini API authentication token (required)
+
+### Development vs Production
+- **Development**: Uses volume mounts for hot-reload, includes dev dependencies
+- **Production**: Optimized runtime image with only production dependencies
 
 ## 🌟 Features
 

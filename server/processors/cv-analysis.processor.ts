@@ -19,7 +19,7 @@ const extractJsonFromResponse = (response: unknown): string => {
     return String(r.output_text)
   }
 
-  // 2) Vertex-style candidates → content → parts[].text
+  // 2) Vertex-style candidates -> content -> parts[].text
   const firstCandidate = r?.candidates?.[0]
   const parts: unknown = firstCandidate?.content?.parts ?? []
   if (Array.isArray(parts)) {
